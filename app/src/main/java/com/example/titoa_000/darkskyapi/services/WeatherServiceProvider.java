@@ -1,7 +1,10 @@
 package com.example.titoa_000.darkskyapi.services;
 
+import android.drm.DrmErrorEvent;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.example.titoa_000.darkskyapi.events.ErrorEvent;
 import com.example.titoa_000.darkskyapi.events.WeatherEvent;
 
 import org.greenrobot.eventbus.EventBus;
@@ -35,15 +38,21 @@ public class WeatherServiceProvider {
         weatherCall.enqueue(new Callback<Weather>() {
             @Override
             public void onResponse(Call<Weather> call, Response<Weather> response) {
-                Weather weather =  response.body();
-                Currently currently = weather.getCurrently();
-                Log.e(TAG, "Temperature =  " + currently.getTemperature());
-                EventBus.getDefault().post(new WeatherEvent(weather));
+                Weather weather = response.body();
+                if (weather != null) {
+                    Currently currently = weather.getCurrently();
+                    Log.e(TAG, "Temperature =  " + currently.getTemperature());
+                    EventBus.getDefault().post(new WeatherEvent(weather));
+                } else {
+                    Log.e(TAG, "No Response: check secret key");
+                    EventBus.getDefault().post(new ErrorEvent("No weather data available"));
+                }
             }
 
             @Override
             public void onFailure(Call<Weather> call, Throwable t) {
                 Log.e(TAG, "onFailure: Unable to get weather data");
+                EventBus.getDefault().post(new ErrorEvent("Unable to get weather server"));
             }
         });
     }
